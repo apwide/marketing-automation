@@ -1,5 +1,5 @@
 # Build TypeScript
-FROM node:16 AS build
+FROM node:18 AS build
 WORKDIR /usr/src/app
 COPY package*.json ./
 COPY tsconfig.json ./
@@ -9,7 +9,7 @@ RUN npm install
 RUN npm run build
 
 # Install deps & build image
-FROM node:16
+FROM node:18-alpine
 WORKDIR /usr/src/app
 VOLUME /usr/src/app/data
 COPY package*.json ./
