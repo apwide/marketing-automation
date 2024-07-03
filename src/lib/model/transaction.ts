@@ -28,6 +28,7 @@ export interface TransactionData {
   maintenanceEndDate: string,
 
   transactionId: string,
+  transactionLineItemId: string,
   saleDate: string,
   saleType: 'Renewal' | 'Upgrade' | 'New' | 'Refund',
 
@@ -51,6 +52,7 @@ export class Transaction extends MpacRecord<TransactionData> {
   static fromRaw(rawTransaction: RawTransaction) {
     return new Transaction({
       transactionId: rawTransaction.transactionId,
+      transactionLineItemId: rawTransaction.transactionLineItemId,
 
       addonLicenseId: rawTransaction.addonLicenseId ?? null,
       appEntitlementId: rawTransaction.appEntitlementId ?? null,

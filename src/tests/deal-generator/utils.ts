@@ -139,6 +139,7 @@ function rawTransactionFrom(rawLicense: RawLicense, txId: string, saleDate: stri
       technicalContact: rawLicense.contactDetails.technicalContact ?? { email: 'technical_contact@example.com'}
     },
     transactionId: txId,
+    transactionLineItemId: '1',
     purchaseDetails: {
       billingPeriod: "Monthly",
       tier: 'Unlimited Users',

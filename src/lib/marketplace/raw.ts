@@ -17,6 +17,7 @@ export type RawPartnerDetails = {
 
 export interface RawTransaction {
   transactionId: string;
+  transactionLineItemId: string;
   addonLicenseId?: string;
   licenseId?: string;
   addonKey: string;
@@ -45,7 +46,6 @@ export interface RawTransaction {
 
   appEntitlementId?: string;
   appEntitlementNumber?: string;
-
 }
 
 export type RawLicenseContact = {

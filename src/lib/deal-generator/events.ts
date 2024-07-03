@@ -1,7 +1,8 @@
 import { RelatedLicenseSet } from "../license-matching/license-grouper";
 import { License } from "../model/license";
-import { Transaction } from "../model/transaction";
+import {Transaction, uniqueTransactionId} from '../model/transaction'
 import { sorter } from "../util/helpers";
+import {ConsoleLogger} from '../log/console'
 
 export type EventMeta = 'partner-only' | 'mass-provider-only' | 'partner-and-mass-provider-only' | 'archived-app' | null;
 
@@ -19,12 +20,21 @@ export type DealRelevantEvent = (
   UpgradeEvent
 );
 
+type TransactionDeal = DealRelevantEvent & {
+  transaction: Transaction
+}
+
+function hasTransaction(event: DealRelevantEvent): event is TransactionDeal {
+  return (event as any).transaction
+}
+
 export class EventGenerator {
 
   constructor(
     private archivedApps: Set<string>,
     private partnerDomains: Set<string>,
     private freeEmailDomains: Set<string>,
+    private console?: ConsoleLogger
   ) { }
 
   private events: DealRelevantEvent[] = [];
@@ -58,6 +68,7 @@ export class EventGenerator {
     }
 
     this.normalizeEvalAndPurchaseEvents();
+    this.normalizeMultiOperationForOneTransaction()
 
     return this.events;
   }
@@ -119,6 +130,34 @@ export class EventGenerator {
     if (this.events.length === 0 && lastEval) {
       this.events = [lastEval];
     }
+  }
+
+  private normalizeMultiOperationForOneTransaction() {
+    if (this.events.length < 2) return;
+
+    const txEvents = this.events.filter(hasTransaction) as TransactionDeal[]
+    const groupedByTxId = txEvents.reduce((previous, current) => {
+      const uniqueId = uniqueTransactionId(current.transaction.id, current.transaction.license.id)
+      previous[uniqueId] = [
+        ...previous[uniqueId] || [],
+        current
+      ]
+      return previous
+    }, {} as Record<string, TransactionDeal[]>)
+    Object.entries(groupedByTxId)
+      .filter(([, values]) => values.length > 1)
+      .forEach(([, values]) => {
+        values.sort(byMaintenanceStartDate())
+        const toKeep = values.shift()!
+        values.forEach(value => {
+          const newId = `${value.transaction.id}/${value.transaction.data.transactionLineItemId}`
+          const newTxId = `${value.transaction.data.transactionId}/${value.transaction.data.transactionLineItemId}`
+          this.console?.printWarning(`transaction id ${value.transaction.id} for license ${value.transaction.license.id} updated to ${newId}`)
+          this.console?.printWarning(`transaction data transaction id ${value.transaction.data.transactionId} for license ${value.transaction.license.id} updated to ${newTxId}`)
+          value.transaction.id = newId
+          value.transaction.data.transactionId = newTxId
+        })
+    })
   }
 
   public getSortedRecords(group: RelatedLicenseSet) {
@@ -232,4 +271,20 @@ function isPaidLicense(license: License) {
     license.data.licenseType === 'COMMUNITY' ||
     license.data.licenseType === 'DEMONSTRATION'
   );
+}
+
+function byMaintenanceStartDate(): (a: TransactionDeal, b: TransactionDeal) => number {
+  return (a, b) => a.transaction.data.maintenanceStartDate.localeCompare(b.transaction.data.maintenanceEndDate)
+}
+
+function byTransactionDealImportance(): (a: TransactionDeal, b: TransactionDeal) => number {
+  function score(d: TransactionDeal): number {
+    switch (d.type) {
+      case 'purchase': return 3;
+      case 'upgrade': return 2;
+      case 'renewal': return 1;
+      default: throw new Error(`${d.type} is not a TransactionDeal`)
+    }
+  }
+  return (a, b) => score(b) - score(a)
 }
