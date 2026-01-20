@@ -7,6 +7,7 @@ import { MpacConfig } from '../marketplace/marketplace';
 import { HubspotContactConfig } from '../model/contact';
 import { HubspotDealConfig } from '../model/deal';
 import { RunLoopConfig } from '../util/runner';
+import { HubspotCompanyConfig } from '../model/company';
 
 dotenv.config();
 
@@ -97,6 +98,12 @@ export function hubspotDealConfigFromENV(): HubspotDealConfig {
 }
 
 export const hubspotAccountIdFromEnv = optional('HUBSPOT_ACCOUNT_ID');
+
+export function hubspotCompanyConfigFromENV(): HubspotCompanyConfig {
+  return {
+    managedFields: new Set(optional('HUBSPOT_MANAGED_COMPANY_FIELDS')?.split(/\s*,\s*/g) ?? [])
+  }
+}
 
 export function hubspotContactConfigFromENV(): HubspotContactConfig {
   return {

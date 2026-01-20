@@ -5,17 +5,35 @@ import { KnownError } from '../util/errors';
 import { batchesOf, isPresent } from '../util/helpers';
 import {Association, EntityAdapter, EntityId, EntityKind, ExistingEntity, NewEntity, RelativeAssociation} from './interfaces'
 import { typedEntries } from './manager';
+import IConfiguration from '@hubspot/api-client/lib/src/configuration/IConfiguration';
 
 export type HubspotCreds = {
   accessToken: string,
 };
+
+export type HubspotLimiterSetting = {
+  minTime: number,
+  maxConcurrent: number,
+  id: 'hubspot-client-limiter'
+}
+
+// https://www.npmjs.com/package/@hubspot/api-client?activeTab=readme
+const DEFAULT_CLIENT_LIMITER: HubspotLimiterSetting = {
+  minTime: 1000 / 5, // 9 req/s
+  maxConcurrent: 3,
+  id: 'hubspot-client-limiter'
+}
 
 export default class HubspotAPI {
 
   private client: hubspot.Client;
 
   constructor(private console?: ConsoleLogger) {
-    this.client = new hubspot.Client(hubspotCredsFromENV());
+    const options: IConfiguration = {
+      ...hubspotCredsFromENV(),
+      limiterOptions: DEFAULT_CLIENT_LIMITER
+    }
+    this.client = new hubspot.Client(options);
   }
 
   public async downloadHubspotEntities<D>(entityAdapter: EntityAdapter<D>) {
@@ -33,7 +51,7 @@ export default class HubspotAPI {
       : undefined);
 
     try {
-      const entities = await this.apiFor(entityAdapter.kind).getAll(undefined, undefined, apiProperties, associations);
+      const entities = await this.apiFor(entityAdapter.kind).getAll(50, undefined, apiProperties, associations);
       const normalizedEntities = entities.map(({ id, properties, associations }) => ({
         id,
         properties: Object.fromEntries(

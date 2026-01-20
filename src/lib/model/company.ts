@@ -8,42 +8,50 @@ type CompanyData = {
   type: 'Partner' | null;
 };
 
+export interface HubspotCompanyConfig {
+  managedFields?: Set<string>,
+}
+
 export class Company extends Entity<CompanyData> {
 
   public contacts = this.makeDynamicAssociation<Contact>('contact');
 
 }
 
-export const CompanyAdapter: EntityAdapter<CompanyData> = {
+function makeAdapter(config: HubspotCompanyConfig): EntityAdapter<CompanyData> {
+  return {
+    kind: 'company',
 
-  kind: 'company',
-
-  associations: {
-    contact: 'down',
-  },
-
-  data: {
-    name: {
-      property: 'name',
-      down: name => name ?? '',
-      up: name => name,
+    associations: {
+      contact: 'down',
     },
-    type: {
-      property: 'type',
-      down: type => type === 'PARTNER' ? 'Partner' : null,
-      up: type => type === 'Partner' ? 'PARTNER' : '',
+
+    data: {
+      name: {
+        property: 'name',
+        down: name => name ?? '',
+        up: name => name,
+      },
+      type: {
+        property: 'type',
+        down: type => type === 'PARTNER' ? 'Partner' : null,
+        up: type => type === 'Partner' ? 'PARTNER' : '',
+      },
     },
-  },
 
-  additionalProperties: [],
+    additionalProperties: [],
 
-  managedFields: new Set(),
-
-};
+    managedFields: config.managedFields ?? new Set(),
+  }
+}
 
 export class CompanyManager extends EntityManager<CompanyData, Company> {
 
   protected override Entity = Company;
-  public override entityAdapter = CompanyAdapter;
+  public override entityAdapter: EntityAdapter<CompanyData>;
 
+  constructor(typeMappings: Map<string, string>, config: HubspotCompanyConfig) {
+    super(typeMappings);
+    this.entityAdapter = makeAdapter(config)
+  }
 }
