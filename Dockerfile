@@ -15,5 +15,12 @@ VOLUME /usr/src/app/data
 COPY package*.json ./
 RUN npm install --only=production
 COPY --from=build /usr/src/app/out ./out
+
+RUN mkdir -p /usr/src/app/data \
+    && chown -R node:node /usr/src/app/data
+
 ENV NODE_ENV=production
+
+USER node
+
 CMD [ "node", "out/bin/main.js" ]
