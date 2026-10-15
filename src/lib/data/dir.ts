@@ -1,4 +1,3 @@
-import del from 'del';
 import fs from "fs";
 import { fileURLToPath, pathToFileURL, URL } from "url";
 import { ConsoleLogger } from '../log/console';
@@ -26,7 +25,7 @@ export default class DataDir {
     const absolutePath = fileURLToPath(this.#url);
     console.printInfo('Pruning', absolutePath);
     try {
-      del.sync(absolutePath);
+      fs.rmSync(absolutePath, { recursive: true, force: true });
     }
     catch (e: any) {
       console.printWarning('Pruning', 'Failed to delete file', e.message, e.stack);
