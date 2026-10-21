@@ -3,6 +3,9 @@
   "version": "0.5.1",
   "description": "",
   "main": "out/bin/main.js",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
