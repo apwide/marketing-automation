@@ -1,5 +1,5 @@
 # Build TypeScript
-FROM node:20 AS build
+FROM node:24 AS build
 WORKDIR /usr/src/app
 COPY package*.json ./
 COPY tsconfig.json ./
@@ -9,11 +9,11 @@ RUN npm install
 RUN npm run build
 
 # Install deps & build image
-FROM node:20
+FROM node:24
 WORKDIR /usr/src/app
 VOLUME /usr/src/app/data
 COPY package*.json ./
-RUN npm install --only=production
+RUN npm ci --omit=dev
 COPY --from=build /usr/src/app/out ./out
 
 RUN mkdir -p /usr/src/app/data \
