@@ -1,8 +1,3 @@
-node('docker') {
-  container('kaniko') {
-    stage('build-image') {
-      checkout scm
-      sh "/kaniko/executor --context=${env.WORKSPACE} --dockerfile=Dockerfile  --destination=docker.apwide.com/marketing-automation:31.0"
-    }
-  }
-}
+@Library(['apwide-jenkins-shared-lib@develop', 'apwide-ci-shared-library']) _
+
+apwDocker imageName: "docker.apwide.com/marketing-automation:31.0"
